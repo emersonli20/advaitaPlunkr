@@ -41,41 +41,35 @@ print(starting_nodes.shape)
 def bfs(source):
     explored = []
     queue = [source]
-    match = None
     while queue:
         node = queue.pop(0)
-        if node in data[:,0]:
-            match = node
-            break
-        elif node not in explored:
+        # what if the starting node is None? then ont.children(source) returns nothing
+        if node not in explored:
             explored.append(node)
-            neighbors = ont.neighbors(source)
-            queue.extend(neighbors)
-        #else statement in case a match is never found?
-        #what if bfs returns None?
-    return match
+            children = ont.children(source)
+            queue.extend(children)
+    return explored
+
+def min_pval(nodes):
+    pvals = []
+    for node in nodes:
+        for i in range(len(data[:,0])):
+            if node == data[i,0]:
+                pvals.append(data[i,4])
+    if not pvals:
+        return None
+    else: 
+        return min(pvals)
+
+# get pvals
+def get_pvals():
+    pvals = []
+    for node in starting_node_ids:
+        pvals.append(min_pval(bfs(node)))
+    return pvals
 
 print("Starting Nodes")
 for i in range(starting_nodes.shape[0]):
-    print(starting_nodes[i][1])
-    
-print()
-bfs_results = []
-print("bfs results")
-for i in range(starting_nodes.shape[0]):
-    if starting_nodes is not None:
-        print(bfs(starting_nodes[i][1]))
-        bfs_results.append(bfs(starting_nodes[i][1]))
+    print(starting_nodes[i,1])
 
-# get pvals
-pvals = []
-for i in range(len(bfs_results)):
-    if bfs_results[i] is None:
-            pvals.append(None)
-    for j in range(data.shape[0]):
-        if bfs_results[i] == data[j,0]:
-            pvals.append(data[j,4])
-
-print()
-print('pvals:')
-print(pvals)
+print(get_pvals())
