@@ -15,10 +15,10 @@ ofactory = OntologyFactory()
 ont = ofactory.create('go')
 
 data = pd.read_csv('C:\\Users\\emers\\python-projects\\pval\\melanoma.csv')
-print(data)
+# print(data)
 
 data = data.to_numpy()
-print(data)
+# print(data)
 
 starting_node_titles = ['Cytosol', 'Intermediate filaments', 'Actin filaments', 'Focal adhesion sites', 'Microtubule organizing center'
                        , 'Centrosome', 'Microtubules', 'Microtubule ends', 'Secreted proteins', 'Lipid Droplets', 'Lysosomes',
@@ -34,8 +34,8 @@ starting_node_titles_np = np.array(starting_node_titles)[np.newaxis]
 starting_node_ids_np = np.array(starting_node_ids)[np.newaxis]
 
 starting_nodes = np.concatenate((starting_node_titles_np.T, starting_node_ids_np.T),axis=1)
-print(starting_nodes)
-print(starting_nodes.shape)
+# print(starting_nodes)
+# print(starting_nodes.shape)
 
 # breadth first search
 def bfs(source):
@@ -68,8 +68,18 @@ def get_pvals():
         pvals.append(min_pval(bfs(node)))
     return pvals
 
-print("Starting Nodes")
-for i in range(starting_nodes.shape[0]):
-    print(starting_nodes[i,1])
+# print("Starting Nodes")
+# for i in range(starting_nodes.shape[0]):
+#     print(starting_nodes[i,1])
 
-print(get_pvals())
+# print(get_pvals())
+
+final_pvals = get_pvals()
+
+final_pvals_np = np.array(final_pvals)[np.newaxis]
+final = np.concatenate((starting_nodes, final_pvals_np.T), axis=1)
+
+final_dataset = pd.DataFrame({'Title': final[:,0], 'ID': final[:,1], 'pval': final[:,2]})
+
+final_dataset.to_csv('to_plunker.csv', index=False)
+print(pd.read_csv('to_plunker.csv'))
