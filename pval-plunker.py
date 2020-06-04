@@ -1,41 +1,90 @@
-# -*- coding: utf-8 -*-
 """
+authors: Emerson Li, Quoc Huynh
 
-@author: emers
 """
 
 from __future__ import print_function
 from ontobio.ontol_factory import OntologyFactory
 from ontobio.assoc_factory import AssociationSetFactory
 
+import obonet
+
 import pandas as pd
 import numpy as np
 
+from bs4 import BeautifulSoup as bs
+
+def has_class_but_no_id(tag):
+    return tag.has_attr('title')
+
+html_file = open('cellLocation.html', 'r')
+html_content = html_file.read()
+html_file.close()
+soup  = bs(html_content,'html.parser') 
+
 ofactory = OntologyFactory()
-ont = ofactory.create('go')
+ont = ofactory.create('go.json')
 
-data = pd.read_csv('C:\\Users\\emers\\python-projects\\pval\\melanoma.csv')
-# print(data)
+# data = pd.read_csv('melanoma.csv')
+# data = data.to_numpy()
 
+starting_node_titles = []
+titles = soup.find_all("g", title=True)
+for title in titles:
+    temp = str(title)
+    a = temp.find("title")
+    b = temp.find(">")
+    name = temp[a+7:b-1]
+    if name[len(name)-3:] == 'ies':
+        name = name[:-3]
+        name = name + 'y'
+    if name[-1] is 's':
+        if name[-2] is not 'u':
+            name = name[:-1]
+    if name[-1] is 'i':
+        name = name[:-1]
+        name = name + 'us'
+    if name[-1] is 'a':
+        name = name[:-1]
+        name = name + 'on'
+    if name.lower() not in starting_node_titles:
+        starting_node_titles.append(name.lower())
+print(starting_node_titles)
+# print(len(starting_node_titles))
+
+# # get ids from the melanoma.csv file
+data = pd.read_csv('melanoma.csv')
 data = data.to_numpy()
-# print(data)
+# starting_node_ids = []
+# melanoma_ids = data[:,0]
+# melanoma_titles = data[:,1].tolist()
+# for name in starting_node_titles:
+#     if name.lower() in melanoma_titles:
+#         row_num = melanoma_titles.index(name.lower())
+#         starting_node_ids.append(melanoma_ids[row_num])
+#     else:
+#         starting_node_ids.append(None)
+# print(starting_node_ids)
 
-starting_node_titles = ['Cytosol', 'Intermediate filaments', 'Actin filaments', 'Focal adhesion sites', 'Microtubule organizing center'
-                       , 'Centrosome', 'Microtubules', 'Microtubule ends', 'Secreted proteins', 'Lipid Droplets', 'Lysosomes',
-                       'Peroxisomes', 'Endosomes', 'Endoplasmic reticulum', 'Golgi apparatus', 'Nucleoplasm', 'Nuclear membrane',
-                       'Nuclear bodies', 'Nuclear speckles', 'Nucleoli', 'Nucleoli fibrillar center', 'Rods and rings', 'Mitochondria'
-                       , 'Plasma membrane']
+## get ids from the go.obo file
+graph = obonet.read_obo('go.obo')
+name_to_id = {data['name'].lower(): id_ for id_, data in graph.nodes(data=True) if 'name' in data}
+starting_node_ids = []
+for name in starting_node_titles:
+    try:
+        starting_node_ids.append(name_to_id[name])
+    except:
+        starting_node_ids.append(None)
 
-starting_node_ids = ['GO:0005829', 'GO:0044614', 'GO:0051764', None, 'GO:0005815', 'GO:0005813', 'GO:0005874', 'GO:1990752'
-                    , None, 'GO:0005811', 'GO:0005764', 'GO:0005777', 'GO:0005768', 'GO:0005783', 'GO:0005794', 'GO:0005654',
-                    'GO:0031965', 'GO:0016604', 'GO:0016607', 'GO:0005730', 'GO:0001650', None, 'GO:0005739', 'GO:0005886']
+print(starting_node_ids)
+    
 
 starting_node_titles_np = np.array(starting_node_titles)[np.newaxis]
 starting_node_ids_np = np.array(starting_node_ids)[np.newaxis]
 
 starting_nodes = np.concatenate((starting_node_titles_np.T, starting_node_ids_np.T),axis=1)
-# print(starting_nodes)
-# print(starting_nodes.shape)
+print(starting_nodes)
+print(starting_nodes.shape)
 
 # breadth first search
 def bfs(source):
