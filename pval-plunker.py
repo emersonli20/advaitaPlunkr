@@ -12,15 +12,25 @@ import obonet
 import pandas as pd
 import numpy as np
 
+<<<<<<< HEAD
 from bs4 import BeautifulSoup, SoupStrainer
+=======
+from bs4 import BeautifulSoup as bs
+>>>>>>> e2b27cb5485f640e3d9004c02bd9655f026cac89
 
 def has_class_but_no_id(tag):
     return tag.has_attr('title')
 
 html_file = open('cellLocation.html', 'r')
+<<<<<<< HEAD
 cellLocation = html_file.read()
 html_file.close()
 soup  = BeautifulSoup(cellLocation,'html.parser') 
+=======
+html_content = html_file.read()
+html_file.close()
+soup  = bs(html_content,'html.parser') 
+>>>>>>> e2b27cb5485f640e3d9004c02bd9655f026cac89
 
 ofactory = OntologyFactory()
 ont = ofactory.create('go.json')
@@ -38,6 +48,7 @@ for title in titles:
     if name[len(name)-3:] == 'ies':
         name = name[:-3]
         name = name + 'y'
+<<<<<<< HEAD
     if name[-1] == 's':
         if name[-2] != 'u':
             name = name[:-1]
@@ -45,6 +56,15 @@ for title in titles:
         name = name[:-1]
         name = name + 'us'
     if name[-1] == 'a':
+=======
+    if name[-1] is 's':
+        if name[-2] is not 'u':
+            name = name[:-1]
+    if name[-1] is 'i':
+        name = name[:-1]
+        name = name + 'us'
+    if name[-1] is 'a':
+>>>>>>> e2b27cb5485f640e3d9004c02bd9655f026cac89
         name = name[:-1]
         name = name + 'on'
     if name.lower() not in starting_node_titles:
