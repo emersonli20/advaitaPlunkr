@@ -138,17 +138,21 @@ print(pd.read_csv('to_plunker.csv'))
 df = pd.read_csv('to_plunker.csv')
 plunker_inputs = df.to_numpy()
 
-def set_comp_color(comp,row):
+def log_arr(arr, base):
+    res = [-math.log(x, base) if x is not None else None for x in arr]
+    return [x for x in res if x is not None] # removes None values
+
+def set_comp_color(comp, row, base, mx):
     # strainer = SoupStrainer('g', title=comp)
     #strainer = SoupStrainer('g', attrs={'title': lambda x: x and x.lower()==comp})
-    strainer = SoupStrainer('g', attrs={'title': lambda x: x and (p.singular_noun(x).lower()==comp
-                                       if p.singular_noun(x) else x.lower()==comp)})
+    strainer = SoupStrainer('g', attrs={'title': lambda x: x and (modded_singularize(x).lower()==comp
+                                       if modded_singularize(x) else x.lower()==comp)})
     comp_soup = BeautifulSoup(cellLocation, 'html.parser', parse_only=strainer)
     paths = comp_soup.find_all('path', style=True)
     new_paths = ''
     for path in paths:
         pval_input = plunker_inputs[row,2]
-        rgb = log_pval_to_rgb(pval_input) # experiment with different bases and scales
+        rgb = log_pval_to_rgb(pval_input, mx, base) # experiment with different bases and scales
         temp = str(path)
         a = temp.find('style')
         temp = ''.join((temp[:a+13], rgb, temp[a+19:]))
@@ -156,10 +160,12 @@ def set_comp_color(comp,row):
     return new_paths
 
 
-def new_html():
+def new_html(base=10):
+    mx = max(log_arr(final_pvals, base))
+    # print(mx)
     new_file = ''
     for i in range(plunker_inputs.shape[0]):
-        new_file += set_comp_color(plunker_inputs[i,0], i)
+        new_file += set_comp_color(plunker_inputs[i,0], i, base, mx)
 
     paths_only_soup = BeautifulSoup(new_file, 'html.parser')
     # paths_only_soup_str = str(paths_only_soup)
@@ -170,7 +176,6 @@ def new_html():
         old_paths[i].replace_with(new_paths[i])
     
     return str(soup)
-
 
 
 def pval_to_rgb(pval):
@@ -188,12 +193,14 @@ def pval_to_rgb(pval):
     rgb = r_str + g_str + b_str
     return rgb
 
-def log_pval_to_rgb(pval, base=10, scale=55):
+
+def log_pval_to_rgb(pval, mx, base):
     r_str = 'ff'
     if np.isnan(pval):
         return r_str*3
     x = -math.log(pval, base)
     
+    scale = 255 / mx
     y = int(round(x*scale))
     gb = 255 - y
     if gb < 0:
@@ -205,6 +212,16 @@ def log_pval_to_rgb(pval, base=10, scale=55):
     
     rgb = r_str + gb_str + gb_str
     return rgb
+
+def modded_singularize(word):
+    word = word
+#     if ' and ' in word:
+#         x = word.split(' and ')   
+    if word[-2:] == 'ia':
+        word = word[:-2] + 'ion'
+        return word
+    return p.singular_noun(word)
+    
     
 new_cellLocation = new_html()
 
