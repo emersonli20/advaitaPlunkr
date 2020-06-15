@@ -6,14 +6,13 @@ authors: Emerson Li, Quoc Huynh
 from __future__ import print_function
 from ontobio.ontol_factory import OntologyFactory
 from ontobio.assoc_factory import AssociationSetFactory
-
 import obonet
-
 import pandas as pd
 import numpy as np
-
-
 from bs4 import BeautifulSoup, SoupStrainer
+import inflect
+#singularization doesn't work for mitochondria + rods and rings
+import math
 
 def has_class_but_no_id(tag):
     return tag.has_attr('title')
@@ -24,7 +23,9 @@ html_file.close()
 soup  = BeautifulSoup(cellLocation,'html.parser') 
 
 ofactory = OntologyFactory()
-ont = ofactory.create('go.json')
+ont = ofactory.create('go')
+
+p = inflect.engine()
 
 # data = pd.read_csv('melanoma.csv')
 # data = data.to_numpy()
@@ -139,18 +140,21 @@ plunker_inputs = df.to_numpy()
 
 def set_comp_color(comp,row):
     # strainer = SoupStrainer('g', title=comp)
-    strainer = SoupStrainer('g', attrs={'title': lambda x: x and x.lower()==comp})
+    #strainer = SoupStrainer('g', attrs={'title': lambda x: x and x.lower()==comp})
+    strainer = SoupStrainer('g', attrs={'title': lambda x: x and (p.singular_noun(x).lower()==comp
+                                       if p.singular_noun(x) else x.lower()==comp)})
     comp_soup = BeautifulSoup(cellLocation, 'html.parser', parse_only=strainer)
     paths = comp_soup.find_all('path', style=True)
     new_paths = ''
     for path in paths:
         pval_input = plunker_inputs[row,2]
-        rgb = pval_to_rgb(pval_input)
+        rgb = log_pval_to_rgb(pval_input) # experiment with different bases and scales
         temp = str(path)
         a = temp.find('style')
         temp = ''.join((temp[:a+13], rgb, temp[a+19:]))
         new_paths += temp
     return new_paths
+
 
 def new_html():
     new_file = ''
@@ -182,6 +186,24 @@ def pval_to_rgb(pval):
     if len(b_str) < 2:
         b_str = '0' + b_str
     rgb = r_str + g_str + b_str
+    return rgb
+
+def log_pval_to_rgb(pval, base=10, scale=55):
+    r_str = 'ff'
+    if np.isnan(pval):
+        return r_str*3
+    x = -math.log(pval, base)
+    
+    y = int(round(x*scale))
+    gb = 255 - y
+    if gb < 0:
+        gb = 0
+        
+    gb_str = format(gb,'x')
+    if len(gb_str) < 2:
+        gb_str = '0' + gb_str
+    
+    rgb = r_str + gb_str + gb_str
     return rgb
     
 new_cellLocation = new_html()
