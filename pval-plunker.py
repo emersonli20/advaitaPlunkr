@@ -1,21 +1,13 @@
-"""
-authors: Emerson Li, Quoc Huynh
-
-"""
-
 from __future__ import print_function
 from ontobio.ontol_factory import OntologyFactory
-from ontobio.assoc_factory import AssociationSetFactory
 import obonet
 import pandas as pd
 import numpy as np
 from bs4 import BeautifulSoup, SoupStrainer
 import inflect
-#singularization doesn't work for mitochondria + rods and rings
 import math
 
-def has_class_but_no_id(tag):
-    return tag.has_attr('title')
+p = inflect.engine()
 
 html_file = open('cellLocation.html', 'r')
 cellLocation = html_file.read()
@@ -25,70 +17,56 @@ soup  = BeautifulSoup(cellLocation,'html.parser')
 ofactory = OntologyFactory()
 ont = ofactory.create('go')
 
-p = inflect.engine()
-
-# data = pd.read_csv('melanoma.csv')
-# data = data.to_numpy()
-
-starting_node_titles = []
-titles = soup.find_all("g", title=True)
-for title in titles:
-    temp = str(title)
-    a = temp.find("title")
-    b = temp.find(">")
-    name = temp[a+7:b-1]
-    if name[len(name)-3:] == 'ies':
-        name = name[:-3]
-        name = name + 'y'
-    if name[-1] == 's':
-        if name[-2] != 'u':
-            name = name[:-1]
-    if name[-1] == 'i':
-        name = name[:-1]
-        name = name + 'us'
-    if name[-1] == 'a':
-        name = name[:-1]
-        name = name + 'on'
-    if name.lower() not in starting_node_titles:
-        starting_node_titles.append(name.lower())
-print(starting_node_titles)
-# print(len(starting_node_titles))
-
-# # get ids from the melanoma.csv file
-data = pd.read_csv('melanoma.csv')
+input_csv = 'melanoma.csv'
+data = pd.read_csv(input_csv)
 data = data.to_numpy()
-# starting_node_ids = []
-# melanoma_ids = data[:,0]
-# melanoma_titles = data[:,1].tolist()
-# for name in starting_node_titles:
-#     if name.lower() in melanoma_titles:
-#         row_num = melanoma_titles.index(name.lower())
-#         starting_node_ids.append(melanoma_ids[row_num])
-#     else:
-#         starting_node_ids.append(None)
-# print(starting_node_ids)
 
-## get ids from the go.obo file
-graph = obonet.read_obo('go.obo')
-name_to_id = {data['name'].lower(): id_ for id_, data in graph.nodes(data=True) if 'name' in data}
-starting_node_ids = []
-for name in starting_node_titles:
-    try:
-        starting_node_ids.append(name_to_id[name])
-    except:
-        starting_node_ids.append(None)
+def has_class_but_no_id(tag):
+    return tag.has_attr('title')
 
-print(starting_node_ids)
-    
+def get_starting_nodes():
+    starting_node_titles = []
+    titles = soup.find_all("g", title=True)
+    for title in titles:
+        temp = str(title)
+        a = temp.find("title")
+        b = temp.find(">")
+        name = temp[a+7:b-1]
+        if name[len(name)-3:] == 'ies':
+            name = name[:-3]
+            name = name + 'y'
+        if name[-1] == 's':
+            if name[-2] != 'u':
+                name = name[:-1]
+        if name[-1] == 'i':
+            name = name[:-1]
+            name = name + 'us'
+        if name[-1] == 'a':
+            name = name[:-1]
+            name = name + 'on'
+        if name.lower() not in starting_node_titles:
+            starting_node_titles.append(name.lower())
+#     print(starting_node_titles)
 
-starting_node_titles_np = np.array(starting_node_titles)[np.newaxis]
-starting_node_ids_np = np.array(starting_node_ids)[np.newaxis]
+    graph = obonet.read_obo('go.obo')
+    name_to_id = {data['name'].lower(): id_ for id_, data in graph.nodes(data=True) if 'name' in data}
+    starting_node_ids = []
+    for name in starting_node_titles:
+        try:
+            starting_node_ids.append(name_to_id[name])
+        except:
+            starting_node_ids.append(None)
 
-starting_nodes = np.concatenate((starting_node_titles_np.T, starting_node_ids_np.T),axis=1)
-print(starting_nodes)
-print(starting_nodes.shape)
+#     print(starting_node_ids)
 
-# breadth first search
+    starting_node_titles_np = np.array(starting_node_titles)[np.newaxis]
+    starting_node_ids_np = np.array(starting_node_ids)[np.newaxis]
+
+    starting_nodes = np.concatenate((starting_node_titles_np.T, starting_node_ids_np.T),axis=1)
+#     print(starting_nodes)
+#     print(starting_nodes.shape)
+    return starting_nodes, starting_node_titles, starting_node_ids
+
 def bfs(source):
     explored = []
     queue = [source]
@@ -101,6 +79,7 @@ def bfs(source):
             queue.extend(children)
     return explored
 
+
 def min_pval(nodes):
     pvals = []
     for node in nodes:
@@ -112,31 +91,13 @@ def min_pval(nodes):
     else: 
         return min(pvals)
 
-# get pvals
+
 def get_pvals():
     pvals = []
     for node in starting_node_ids:
         pvals.append(min_pval(bfs(node)))
     return pvals
 
-# print("Starting Nodes")
-# for i in range(starting_nodes.shape[0]):
-#     print(starting_nodes[i,1])
-
-# print(get_pvals())
-
-final_pvals = get_pvals()
-
-final_pvals_np = np.array(final_pvals)[np.newaxis]
-final = np.concatenate((starting_nodes, final_pvals_np.T), axis=1)
-
-final_dataset = pd.DataFrame({'Title': final[:,0], 'ID': final[:,1], 'pval': final[:,2]})
-
-final_dataset.to_csv('to_plunker.csv', index=False)
-print(pd.read_csv('to_plunker.csv'))
-
-df = pd.read_csv('to_plunker.csv')
-plunker_inputs = df.to_numpy()
 
 def log_arr(arr, base):
     res = [-math.log(x, base) if x is not None else None for x in arr]
@@ -162,7 +123,9 @@ def set_comp_color(comp, row, base, mx):
 
 def new_html(base=10):
     mx = max(log_arr(final_pvals, base))
-    # print(mx)
+    print()
+    print('max -log(pval): ' + str(mx))
+    print('scale = ' + str(255/mx))
     new_file = ''
     for i in range(plunker_inputs.shape[0]):
         new_file += set_comp_color(plunker_inputs[i,0], i, base, mx)
@@ -222,12 +185,27 @@ def modded_singularize(word):
         return word
     return p.singular_noun(word)
     
-    
-new_cellLocation = new_html()
 
-file = open('new_cellLocation.html', 'w')
+starting_nodes, starting_node_titles, starting_node_ids = get_starting_nodes()
+
+final_pvals = get_pvals()
+
+final_pvals_np = np.array(final_pvals)[np.newaxis]
+final = np.concatenate((starting_nodes, final_pvals_np.T), axis=1)
+
+final_dataset = pd.DataFrame({'Title': final[:,0], 'ID': final[:,1], 'pval': final[:,2]})
+
+final_table_name = 'to_plunker_' + input_csv
+final_dataset.to_csv(final_table_name, index=False)
+print(pd.read_csv(final_table_name))
+
+df = pd.read_csv(final_table_name)
+plunker_inputs = df.to_numpy()
+
+
+new_cellLocation = new_html()
+new_html_name = 'new_cellLocation_' + input_csv[:-4] + '.html'
+
+file = open(new_html_name, 'w')
 file.write(new_cellLocation)
 file.close()
-
-# file = open('new_cellLocation.html', 'r')
-# print(file.read())

@@ -1,0 +1,25 @@
+Title,ID,pval
+cytosol,GO:0005829,3.1e-14
+intermediate filament,GO:0005882,0.13034
+actin filament,GO:0005884,0.00297
+focal adhesion site,,
+microtubule organizing center,GO:0005815,9.7e-05
+centrosome,GO:0005813,9.7e-05
+microtubule,GO:0005874,1.4999999999999999e-05
+microtubule end,GO:1990752,0.00022
+secreted protein,,
+lipid droplet,GO:0005811,0.10024
+lysosome,GO:0005764,0.19833
+peroxisome,GO:0005777,0.7851100000000001
+endosome,GO:0005768,0.00151
+endoplasmic reticulum,GO:0005783,0.01707
+golgi apparatus,GO:0005794,0.013000000000000001
+nucleoplasm,GO:0005654,5.2e-13
+nuclear membrane,GO:0031965,0.00257
+nuclear body,GO:0016604,0.00787
+nuclear speckle,,
+nucleolus,GO:0005730,0.00599
+nucleoli fibrillar center,,
+rods and ring,,
+mitochondrion,GO:0005739,0.83791
+plasma membrane,GO:0005886,0.00026000000000000003
