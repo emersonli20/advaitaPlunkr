@@ -17,7 +17,7 @@ soup  = BeautifulSoup(cellLocation,'html.parser')
 ofactory = OntologyFactory()
 ont = ofactory.create('go')
 
-input_csv = 'melanoma.csv'
+input_csv = 'melanoma2.csv'
 data = pd.read_csv(input_csv)
 data = data.to_numpy()
 
@@ -137,6 +137,10 @@ def new_html(base=10):
 
     for i in range(len(new_paths)):
         old_paths[i].replace_with(new_paths[i])
+
+    target = soup.find_all(text="Max")
+    for v in target:
+        v.replace_with(str(round(mx,2)))
     
     return str(soup)
 
