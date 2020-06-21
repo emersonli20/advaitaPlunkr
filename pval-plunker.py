@@ -17,7 +17,7 @@ soup  = BeautifulSoup(cellLocation,'html.parser')
 ofactory = OntologyFactory()
 ont = ofactory.create('go')
 
-input_csv = 'melanoma.csv'
+input_csv = 'melanoma2.csv'
 data = pd.read_csv(input_csv)
 data = data.to_numpy()
 
