@@ -137,6 +137,10 @@ def new_html(base=10):
 
     for i in range(len(new_paths)):
         old_paths[i].replace_with(new_paths[i])
+
+    target = soup.find_all(text="Max")
+    for v in target:
+        v.replace_with(str(round(mx,2)))
     
     return str(soup)
 
@@ -156,24 +160,30 @@ def pval_to_rgb(pval):
     rgb = r_str + g_str + b_str
     return rgb
 
-
 def log_pval_to_rgb(pval, mx, base):
-    r_str = 'ff'
+    # make it cyan to magenta
+    # cyan: 00FFFF
+    # magenta: FF00FF
+    # as y increases, r increases, g decreases
+    b_str = 'ff'
     if np.isnan(pval):
-        return r_str*3
+        return 'ffffff'
     x = -math.log(pval, base)
     
     scale = 255 / mx
     y = int(round(x*scale))
-    gb = 255 - y
-    if gb < 0:
-        gb = 0
+    r = y
+    g = 255 - y
         
-    gb_str = format(gb,'x')
-    if len(gb_str) < 2:
-        gb_str = '0' + gb_str
+    r_str = format(r,'x')
+    if len(r_str) < 2:
+        r_str = '0' + r_str
+        
+    g_str = format(g,'x')
+    if len(g_str) < 2:
+        g_str = '0' + g_str
     
-    rgb = r_str + gb_str + gb_str
+    rgb = r_str + g_str + b_str
     return rgb
 
 def modded_singularize(word):
