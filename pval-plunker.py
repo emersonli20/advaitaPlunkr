@@ -9,10 +9,10 @@ import math
 
 p = inflect.engine()
 
-html_file = open('cellLocation.html', 'r')
+html_file = open('templates/cellLocation.html', 'r')
 cellLocation = html_file.read()
 html_file.close()
-soup  = BeautifulSoup(cellLocation,'html.parser') 
+soup  = BeautifulSoup(cellLocation,'html.parser')
 
 ofactory = OntologyFactory()
 ont = ofactory.create('go')
@@ -88,7 +88,7 @@ def min_pval(nodes):
                 pvals.append(data[i,4])
     if not pvals:
         return None
-    else: 
+    else:
         return min(pvals)
 
 
@@ -120,7 +120,6 @@ def set_comp_color(comp, row, base, mx):
         new_paths += temp
     return new_paths
 
-
 def new_html(base=10):
     mx = max(log_arr(final_pvals, base))
     print()
@@ -141,7 +140,15 @@ def new_html(base=10):
     target = soup.find_all(text="Max")
     for v in target:
         v.replace_with(str(round(mx,2)))
-    
+
+    titles = soup.find_all("g", title=True)
+    idx = 0
+    while idx < len(titles):
+        if final_pvals[int(idx/2)] is None:
+            final_pvals[int(idx / 2)] = 0
+        titles[idx]['key'] = round(final_pvals[int(idx/2)], 6)
+        idx = idx + 1
+
     return str(soup)
 
 
@@ -169,36 +176,37 @@ def log_pval_to_rgb(pval, mx, base):
     if np.isnan(pval):
         return 'ffffff'
     x = -math.log(pval, base)
-    
+
     scale = 255 / mx
     y = int(round(x*scale))
     r = y
     g = 255 - y
-        
+
     r_str = format(r,'x')
     if len(r_str) < 2:
         r_str = '0' + r_str
-        
+
     g_str = format(g,'x')
     if len(g_str) < 2:
         g_str = '0' + g_str
-    
+
     rgb = r_str + g_str + b_str
     return rgb
 
 def modded_singularize(word):
     word = word
 #     if ' and ' in word:
-#         x = word.split(' and ')   
+#         x = word.split(' and ')
     if word[-2:] == 'ia':
         word = word[:-2] + 'ion'
         return word
     return p.singular_noun(word)
-    
+
 
 starting_nodes, starting_node_titles, starting_node_ids = get_starting_nodes()
 
 final_pvals = get_pvals()
+print(final_pvals)
 
 final_pvals_np = np.array(final_pvals)[np.newaxis]
 final = np.concatenate((starting_nodes, final_pvals_np.T), axis=1)
@@ -211,7 +219,6 @@ print(pd.read_csv(final_table_name))
 
 df = pd.read_csv(final_table_name)
 plunker_inputs = df.to_numpy()
-
 
 new_cellLocation = new_html()
 new_html_name = 'new_cellLocation_' + input_csv[:-4] + '.html'
