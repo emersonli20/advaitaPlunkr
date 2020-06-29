@@ -9,7 +9,7 @@ import math
 
 p = inflect.engine()
 
-html_file = open('cellLocation.html', 'r')
+html_file = open('templates/cellLocation.html', 'r')
 cellLocation = html_file.read()
 html_file.close()
 soup  = BeautifulSoup(cellLocation,'html.parser')
@@ -224,7 +224,7 @@ def modded_singularize(word):
 starting_nodes, starting_node_titles, starting_node_ids = get_starting_nodes()
 
 final_pvals = get_pvals_and_children()
-# print(final_pvals)
+
 
 final = np.concatenate((starting_nodes, final_pvals), axis=1)
 

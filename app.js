@@ -75,4 +75,6 @@ app.directive('cellLocation', function() {
         }
     };
 });
+
 app.controller('MainCtrl', function($scope) {});
+
