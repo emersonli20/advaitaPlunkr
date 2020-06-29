@@ -12,12 +12,12 @@ p = inflect.engine()
 html_file = open('cellLocation.html', 'r')
 cellLocation = html_file.read()
 html_file.close()
-soup  = BeautifulSoup(cellLocation,'html.parser') 
+soup  = BeautifulSoup(cellLocation,'html.parser')
 
 ofactory = OntologyFactory()
-ont = ofactory.create('go')
+ont = ofactory.create('go.json')
 
-input_csv = 'melanoma2.csv'
+input_csv = 'breast_cancer.csv'
 data = pd.read_csv(input_csv)
 data = data.to_numpy()
 
@@ -88,7 +88,7 @@ def min_pval(nodes):
                 pvals.append(data[i,4])
     if not pvals:
         return None
-    else: 
+    else:
         return min(pvals)
 
 
@@ -98,6 +98,20 @@ def get_pvals():
         pvals.append(min_pval(bfs(node)))
     return pvals
 
+def get_pvals_and_children():
+    pvals = np.empty([len(starting_node_ids), 4], dtype='object')
+    for i in range(len(starting_node_ids)):
+        node = starting_node_ids[i]
+        res = bfs(node)
+        pvals[i,0] = min_pval(res)
+        for j in range(len(data[:,0])):
+            if node == data[j,0]:
+                pvals[i,1] = data[j,4]
+                break     
+        res.remove(node)
+        pvals[i,2] = min_pval(res)
+        pvals[i,3] = ', '. join(res)
+    return pvals
 
 def log_arr(arr, base):
     res = [-math.log(x, base) if x is not None else None for x in arr]
@@ -120,9 +134,8 @@ def set_comp_color(comp, row, base, mx):
         new_paths += temp
     return new_paths
 
-
 def new_html(base=10):
-    mx = max(log_arr(final_pvals, base))
+    mx = max(log_arr(final_pvals[:,0], base))
     print()
     print('max -log(pval): ' + str(mx))
     print('scale = ' + str(255/mx))
@@ -141,7 +154,19 @@ def new_html(base=10):
     target = soup.find_all(text="Max")
     for v in target:
         v.replace_with(str(round(mx,2)))
-    
+
+    titles = soup.find_all("g", title=True)
+    idx = 0
+    while idx < len(titles):
+        for i in [x + 2 for x in range(3)]:
+            if pd.isnull(final[int(idx/2), i]):
+                final[int(idx / 2), i] = "--"
+        titles[idx]['min-pval'] = round(final[int(idx/2), 2], 6) if isinstance(final[int(idx/2), 2], float) else final[int(idx/2), 2]
+        titles[idx]['init-pval'] = round(final[int(idx/2), 3], 6) if isinstance(final[int(idx/2), 3], float) else final[int(idx/2), 3]
+        titles[idx]['min-pval-children'] = round(final[int(idx/2), 4], 6) if isinstance(final[int(idx/2), 4], float) else final[int(idx/2), 4]
+        titles[idx]['children'] = final[int(idx/2), 5]
+        idx = idx + 1
+
     return str(soup)
 
 
@@ -169,41 +194,43 @@ def log_pval_to_rgb(pval, mx, base):
     if np.isnan(pval):
         return 'ffffff'
     x = -math.log(pval, base)
-    
+
     scale = 255 / mx
     y = int(round(x*scale))
     r = y
     g = 255 - y
-        
+
     r_str = format(r,'x')
     if len(r_str) < 2:
         r_str = '0' + r_str
-        
+
     g_str = format(g,'x')
     if len(g_str) < 2:
         g_str = '0' + g_str
-    
+
     rgb = r_str + g_str + b_str
     return rgb
 
 def modded_singularize(word):
     word = word
 #     if ' and ' in word:
-#         x = word.split(' and ')   
+#         x = word.split(' and ')
     if word[-2:] == 'ia':
         word = word[:-2] + 'ion'
         return word
     return p.singular_noun(word)
-    
+
 
 starting_nodes, starting_node_titles, starting_node_ids = get_starting_nodes()
 
-final_pvals = get_pvals()
+final_pvals = get_pvals_and_children()
+# print(final_pvals)
 
-final_pvals_np = np.array(final_pvals)[np.newaxis]
-final = np.concatenate((starting_nodes, final_pvals_np.T), axis=1)
+final = np.concatenate((starting_nodes, final_pvals), axis=1)
 
-final_dataset = pd.DataFrame({'Title': final[:,0], 'ID': final[:,1], 'pval': final[:,2]})
+final_dataset = pd.DataFrame({'Title': final[:,0], 'ID': final[:,1], 'min-pval': final[:,2], 
+                              'init-pval': final[:,3], 'min-pval-children': final[:,4],
+                              'children': final[:,5]})
 
 final_table_name = 'to_plunker_' + input_csv
 final_dataset.to_csv(final_table_name, index=False)
@@ -211,7 +238,6 @@ print(pd.read_csv(final_table_name))
 
 df = pd.read_csv(final_table_name)
 plunker_inputs = df.to_numpy()
-
 
 new_cellLocation = new_html()
 new_html_name = 'new_cellLocation_' + input_csv[:-4] + '.html'
