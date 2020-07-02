@@ -107,10 +107,24 @@ def get_pvals_and_children():
         for j in range(len(data[:,0])):
             if node == data[j,0]:
                 pvals[i,1] = data[j,4]
-                break     
+                break
+                
         res.remove(node)
-        pvals[i,2] = min_pval(res)
-        pvals[i,3] = ', '. join(res)
+        desc_info = []
+        for id in res:
+            label = ont.label(id)
+            pval = '--'
+            for k in range(data.shape[0]):
+                if id == data[k,0]:
+                    pval = round(data[k,4],6)
+            info = label + ", pval = " + str(pval)
+            desc_info.append(info)
+        desc_info_str = '; '.join(desc_info)
+        pvals[i,3] = desc_info_str
+        
+        non_represented_res = [x for x in res if x not in starting_node_ids]
+        pvals[i,2] = min_pval(non_represented_res)
+        
     return pvals
 
 def log_arr(arr, base):
@@ -230,7 +244,7 @@ final = np.concatenate((starting_nodes, final_pvals), axis=1)
 
 final_dataset = pd.DataFrame({'Title': final[:,0], 'ID': final[:,1], 'min-pval': final[:,2], 
                               'init-pval': final[:,3], 'min-pval-children': final[:,4],
-                              'children': final[:,5]})
+                              'descendants': final[:,5]})
 
 final_table_name = 'to_plunker_' + input_csv
 final_dataset.to_csv(final_table_name, index=False)
