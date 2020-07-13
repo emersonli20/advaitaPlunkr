@@ -6,6 +6,7 @@ import numpy as np
 from bs4 import BeautifulSoup, SoupStrainer
 import inflect
 import math
+import json
 
 p = inflect.engine()
 
@@ -272,8 +273,17 @@ print(pd.read_csv(final_table_name))
 df = pd.read_csv(final_table_name)
 plunker_inputs = df.to_numpy()
 
+json_attrs = ['Title', 'ID', 'min-pval', 'init-pval', 'min-pval-children', 'descendants']
+
+ld = [{x: plunker_inputs[i,j] for (j, x) in enumerate(json_attrs)}
+      for i in range(plunker_inputs.shape[0])]
+
+json_filename = 'plunker_inputs_' + input_csv.split('.')[0] + '.json'
+with open(json_filename, 'w') as file:
+    json.dump(ld, file)
+
 new_cellLocation = new_html()
-new_html_name = 'new_cellLocation_' + input_csv[:-4] + '.html'
+new_html_name = 'new_cellLocation_' + input_csv.split('.')[0] + '.html'
 
 file = open(new_html_name, 'w')
 file.write(new_cellLocation)
