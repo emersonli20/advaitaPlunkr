@@ -8,7 +8,7 @@ app.controller('MainCtrl', function($scope) {
   var components = json.parse(jsonStr);
   $scope.colorMaps = {};
   for (var i; i < components.length; i++){
-    //{components[i].title + 'Color': compColor}
+    //{components[i].Title + 'Color': compColor}
     var compColor;
     if (components[i].interpolate === null){
       compColor = rgb(255, 255, 255);
@@ -17,6 +17,6 @@ app.controller('MainCtrl', function($scope) {
       var x = components[i].interpolate;
       compColor = cyMaScale(x);
     }
-    $scope.colorMaps[components[i].title + 'Color'] = compColor;
+    $scope.colorMaps[components[i].Title + 'Color'] = compColor;
   }
 });
