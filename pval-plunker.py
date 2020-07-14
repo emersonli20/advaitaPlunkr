@@ -18,7 +18,7 @@ soup  = BeautifulSoup(cellLocation,'html.parser')
 ofactory = OntologyFactory()
 ont = ofactory.create('go.json')
 
-input_csv = 'breast_cancer.csv'
+input_csv = 'melanoma.csv'
 data = pd.read_csv(input_csv)
 data = data.to_numpy()
 
@@ -258,7 +258,6 @@ def modded_singularize(word):
 starting_nodes, starting_node_titles, starting_node_ids = get_starting_nodes()
 
 final_pvals = get_pvals_and_children_with_depth()
-
 
 final = np.concatenate((starting_nodes, final_pvals), axis=1)
 
