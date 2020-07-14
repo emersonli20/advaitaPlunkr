@@ -1,8 +1,11 @@
 from __future__ import print_function
 from ontobio.ontol_factory import OntologyFactory
+
 import obonet
+
 import pandas as pd
 import numpy as np
+
 from bs4 import BeautifulSoup, SoupStrainer
 import inflect
 import math
@@ -10,17 +13,17 @@ import json
 
 p = inflect.engine()
 
-html_file = open('templates/cellLocation.html', 'r')
-cellLocation = html_file.read()
-html_file.close()
-soup  = BeautifulSoup(cellLocation,'html.parser')
-
-ofactory = OntologyFactory()
-ont = ofactory.create('go.json')
-
 input_csv = 'melanoma.csv'
 data = pd.read_csv(input_csv)
 data = data.to_numpy()
+
+html_file = open('templates/cellLocation.html', 'r')
+cellLocation = html_file.read()
+html_file.close()
+soup  = BeautifulSoup(cellLocation,'html.parser') 
+
+ofactory = OntologyFactory()
+ont = ofactory.create('go.json')
 
 def has_class_but_no_id(tag):
     return tag.has_attr('title')
@@ -68,6 +71,19 @@ def get_starting_nodes():
 #     print(starting_nodes.shape)
     return starting_nodes, starting_node_titles, starting_node_ids
 
+def bfs(source):
+    explored = []
+    queue = [source]
+    while queue:
+        node = queue.pop(0)
+        # what if the starting node is None? then ont.children(source) returns nothing
+        if node not in explored:
+            explored.append(node)
+            children = ont.children(node)
+            queue.extend(children)
+    return explored
+
+
 def bfs_with_depth(source):
     level = 0
     depths = []
@@ -88,7 +104,6 @@ def bfs_with_depth(source):
                          axis=1)
     return res
 
-
 def min_pval(nodes):
     pvals = []
     for node in nodes:
@@ -97,8 +112,16 @@ def min_pval(nodes):
                 pvals.append(data[i,4])
     if not pvals:
         return None
-    else:
+    else: 
         return min(pvals)
+
+
+def get_pvals():
+    pvals = []
+    for node in starting_node_ids:
+        pvals.append(min_pval(bfs(node)))
+    return pvals
+
 
 def get_pvals_and_children_with_depth():
     pvals = np.empty([len(starting_node_ids), 4], dtype='object')
@@ -147,9 +170,13 @@ def goid_to_label_and_pval(d):
         d.update([(k, new_v)])
     return d
             
-def log_arr(arr, base):
+
+def log_arr(arr, base=10, includeNone=False):
     res = [-math.log(x, base) if x is not None else None for x in arr]
-    return [x for x in res if x is not None] # removes None values
+    if includeNone:
+        return res #keeps None values
+    else: 
+        return [x for x in res if x is not None] # removes None values
 
 def set_comp_color(comp, row, base, mx):
     # strainer = SoupStrainer('g', title=comp)
@@ -168,8 +195,9 @@ def set_comp_color(comp, row, base, mx):
         new_paths += temp
     return new_paths
 
+
 def new_html(base=10):
-    mx = max(log_arr(final_pvals[:,0], base))
+    mx = mx_log
     print()
     print('max -log(pval): ' + str(mx))
     print('scale = ' + str(255/mx))
@@ -198,11 +226,10 @@ def new_html(base=10):
         titles[idx]['min-pval'] = round(final[int(idx/2), 2], 6) if isinstance(final[int(idx/2), 2], float) else final[int(idx/2), 2]
         titles[idx]['init-pval'] = round(final[int(idx/2), 3], 6) if isinstance(final[int(idx/2), 3], float) else final[int(idx/2), 3]
         titles[idx]['min-pval-children'] = round(final[int(idx/2), 4], 6) if isinstance(final[int(idx/2), 4], float) else final[int(idx/2), 4]
-        titles[idx]['descendants'] = final[int(idx/2), 5]
+        titles[idx]['descendants'] = final[int(idx/2), 6]
         idx = idx + 1
 
     return str(soup)
-
 
 def pval_to_rgb(pval):
     r_str = 'ff'
@@ -219,6 +246,29 @@ def pval_to_rgb(pval):
     rgb = r_str + g_str + b_str
     return rgb
 
+
+def log_pval_to_rgb(pval, mx, base):
+    # make it cyan to magenta
+    # cyan: 00FFFF
+    # magenta: FF00FF
+    r_str = 'ff'
+    if np.isnan(pval):
+        return 'ffffff'
+    x = -math.log(pval, base)
+    
+    scale = 255 / mx
+    y = int(round(x*scale))
+    gb = 255 - y
+    if gb < 0:
+        gb = 0
+        
+    gb_str = format(gb,'x')
+    if len(gb_str) < 2:
+        gb_str = '0' + gb_str
+    
+    rgb = r_str + gb_str + gb_str
+    return rgb
+
 def log_pval_to_rgb(pval, mx, base):
     # make it cyan to magenta
     # cyan: 00FFFF
@@ -228,42 +278,58 @@ def log_pval_to_rgb(pval, mx, base):
     if np.isnan(pval):
         return 'ffffff'
     x = -math.log(pval, base)
-
+    
     scale = 255 / mx
     y = int(round(x*scale))
     r = y
     g = 255 - y
-
+        
     r_str = format(r,'x')
     if len(r_str) < 2:
         r_str = '0' + r_str
-
+        
     g_str = format(g,'x')
     if len(g_str) < 2:
         g_str = '0' + g_str
-
+    
     rgb = r_str + g_str + b_str
     return rgb
 
 def modded_singularize(word):
     word = word
 #     if ' and ' in word:
-#         x = word.split(' and ')
+#         x = word.split(' and ')   
     if word[-2:] == 'ia':
         word = word[:-2] + 'ion'
         return word
     return p.singular_noun(word)
-
+    
 
 starting_nodes, starting_node_titles, starting_node_ids = get_starting_nodes()
 
 final_pvals = get_pvals_and_children_with_depth()
 
+log_min_pvals = log_arr(final_pvals[:,0].tolist(),includeNone=True)
+mx_log = max(log_arr(final_pvals[:,0].tolist()))
+print(log_min_pvals)
+mx_log
+
+# interpolate_vals = np.array(log_min_pvals)[:, np.newaxis] / mx_log
+interpolate_vals = np.array([round(x / mx_log, 6) if x is not None else None for x in log_min_pvals])[:, np.newaxis]
+print(interpolate_vals.shape)
+final_pvals = np.concatenate([final_pvals[:,:-1], 
+                              interpolate_vals,
+                              (final_pvals[:,-1])[:, np.newaxis]], axis=1)
+
+final_pvals
+
+# final_pvals_np = np.array(final_pvals)[np.newaxis]
+# final = np.concatenate((starting_nodes, final_pvals_np.T), axis=1)
 final = np.concatenate((starting_nodes, final_pvals), axis=1)
 
 final_dataset = pd.DataFrame({'Title': final[:,0], 'ID': final[:,1], 'min-pval': final[:,2], 
                               'init-pval': final[:,3], 'min-pval-children': final[:,4],
-                              'descendants': final[:,5]})
+                              'interpolate': final[:,5], 'descendants': final[:,6]})
 
 final_table_name = 'to_plunker_' + input_csv
 final_dataset.to_csv(final_table_name, index=False)
@@ -272,7 +338,9 @@ print(pd.read_csv(final_table_name))
 df = pd.read_csv(final_table_name)
 plunker_inputs = df.to_numpy()
 
-json_attrs = ['Title', 'ID', 'min-pval', 'init-pval', 'min-pval-children', 'descendants']
+
+json_attrs = ['Title', 'ID', 'min-pval', 'init-pval',
+              'min-pval-children', 'interpolate', 'descendants']
 
 ld = [{x: plunker_inputs[i,j] for (j, x) in enumerate(json_attrs)}
       for i in range(plunker_inputs.shape[0])]
