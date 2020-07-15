@@ -22,7 +22,10 @@ app.directive('cellLocation', function() {
             .on('mouseover',function(){
                  svg.selectAll('#'+d3.select(this).attr("id")).selectAll('path')
                  .transition()
-                    .duration(200).style("opacity",1);
+                    .duration(200)
+                    .style("opacity",1)
+                    .style("stroke","yellow")
+                    .style("stroke-width",0.5);
             })
             .on('mouseleave', function(){
                if (!scope.allComponents[d3.select(this).attr("id")] ||
