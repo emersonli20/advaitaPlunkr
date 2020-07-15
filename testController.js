@@ -1,12 +1,13 @@
 app.controller('MainCtrl', function($scope) {
   var cyMaScale = d3.interpolateLab('cyan', 'magenta');
-  $scope.values = [ "melanoma", "breast_cancer"];
+  $scope.values = ["melanoma", "breast_cancer"];
   $scope.value = $scope.values[0];
   var jsonStr = $(document).ready(function(){
     $.getJSON('plunker_inputs_' + $scope.value + '.json');
   });
   var components = json.parse(jsonStr);
   $scope.colorMaps = {};
+  var logs = [];
   for (var i; i < components.length; i++){
     //{components[i].Title + 'Color': compColor}
     var compColor;
@@ -16,7 +17,9 @@ app.controller('MainCtrl', function($scope) {
     else {
       var x = components[i].interpolate;
       compColor = cyMaScale(x);
+      logs[logs.length] = components[i].log_min_pval;
     }
     $scope.colorMaps[components[i].Title + 'Color'] = compColor;
   }
+  $scope.maxLog = Math.max(...logs);
 });
