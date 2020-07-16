@@ -48,7 +48,7 @@ app.directive('cellLocation', function() {
                     pval_1: d3.select(this).attr("min-pval"),
                     pval_2: d3.select(this).attr("init-pval"),
                     pval_3: d3.select(this).attr("min-pval-children"),
-                    children: d3.select(this).attr("children")
+                    descendants: d3.select(this).attr("descendants")
                 };
                 scope.$apply(scope.updateSelection(cellComponent));
             });
@@ -61,7 +61,7 @@ app.directive('cellLocation', function() {
                     pval_1 : d3.select(this).attr("min-pval"),
                     pval_2: d3.select(this).attr("init-pval"),
                     pval_3: d3.select(this).attr("min-pval-children"),
-                    children: d3.select(this).attr("children")
+                    descendants: d3.select(this).attr("descendants")
                 };
                 scope.$apply(scope.updateSelection(cellComponent));
             });
@@ -69,15 +69,42 @@ app.directive('cellLocation', function() {
               // console.log(innerCol);
               // scope.cellComponent = {id:innerCol.length};
             // });
-            $scope.watch('allComponents', function(newData){
-                console.log(newData);
-                svg.selectAll('.col').selectAll('path')
-                .transition()
-                    .duration(200).style("opacity",0);
-            })
+            // $scope.watch('allComponents', function(newData){
+            //     console.log(newData);
+            //     svg.selectAll('.col').selectAll('path')
+            //     .transition()
+            //         .duration(200).style("opacity",0);
+            // })
         }
     };
 });
 
-app.controller('MainCtrl', function($scope) {});
-
+app.controller('MainCtrl', function($scope, $http) {
+  var cyMaScale = d3.interpolateLab('cyan', 'magenta');
+  $scope.values = ["melanoma", "breast_cancer"];
+  $scope.value = $scope.values[0];
+  $(document).ready(function(){
+  $http.get('plunker_inputs_' + $scope.value + '.json').success(function(data){
+    var components = data;
+    console.log(components);
+		$scope.colorMaps = {};
+    var logs = [];
+    for (var i=0; i < components.length; i++){
+      console.log(components[i].Title);
+      //{components[i].Title + 'Color': compColor}
+      var compColor;
+      if (components[i].interpolate === null){
+        compColor = 'white';
+      }
+      else {
+        var x = components[i].interpolate;
+        compColor = cyMaScale(x);
+        logs[logs.length] = components[i].log_min_pval;
+      }
+      console.log(compColor);
+      $scope.colorMaps[components[i].Title + 'Color'] = compColor;
+    }
+    $scope.maxLog = Math.max(...logs).toFixed(2);
+    });
+  });
+});

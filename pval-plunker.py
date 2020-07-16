@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup, SoupStrainer
 import inflect
 import math
 import json
+import simplejson
 
 p = inflect.engine()
 
@@ -226,7 +227,7 @@ def new_html(base=10):
         titles[idx]['min-pval'] = round(final[int(idx/2), 2], 6) if isinstance(final[int(idx/2), 2], float) else final[int(idx/2), 2]
         titles[idx]['init-pval'] = round(final[int(idx/2), 3], 6) if isinstance(final[int(idx/2), 3], float) else final[int(idx/2), 3]
         titles[idx]['min-pval-children'] = round(final[int(idx/2), 4], 6) if isinstance(final[int(idx/2), 4], float) else final[int(idx/2), 4]
-        titles[idx]['descendants'] = final[int(idx/2), 6]
+        titles[idx]['descendants'] = final[int(idx/2), -1]
         idx = idx + 1
 
     return str(soup)
@@ -311,25 +312,24 @@ final_pvals = get_pvals_and_children_with_depth()
 
 log_min_pvals = log_arr(final_pvals[:,0].tolist(),includeNone=True)
 mx_log = max(log_arr(final_pvals[:,0].tolist()))
-print(log_min_pvals)
-mx_log
 
 # interpolate_vals = np.array(log_min_pvals)[:, np.newaxis] / mx_log
 interpolate_vals = np.array([round(x / mx_log, 6) if x is not None else None for x in log_min_pvals])[:, np.newaxis]
-print(interpolate_vals.shape)
 final_pvals = np.concatenate([final_pvals[:,:-1], 
                               interpolate_vals,
+                              np.array(log_min_pvals)[:, np.newaxis],
                               (final_pvals[:,-1])[:, np.newaxis]], axis=1)
-
-final_pvals
 
 # final_pvals_np = np.array(final_pvals)[np.newaxis]
 # final = np.concatenate((starting_nodes, final_pvals_np.T), axis=1)
 final = np.concatenate((starting_nodes, final_pvals), axis=1)
 
-final_dataset = pd.DataFrame({'Title': final[:,0], 'ID': final[:,1], 'min-pval': final[:,2], 
-                              'init-pval': final[:,3], 'min-pval-children': final[:,4],
-                              'interpolate': final[:,5], 'descendants': final[:,6]})
+for i, name in np.ndenumerate(final[:,0]):
+    final[i[0],0] = name.replace(' ', '_')
+final_dataset = pd.DataFrame({'Title': final[:,0], 'ID': final[:,1], 'min_pval': final[:,2], 
+                              'init_pval': final[:,3], 'min_pval_children': final[:,4],
+                              'interpolate': final[:,5], 'log_min_pval': final[:,6],
+                              'descendants': final[:,-1]})
 
 final_table_name = 'to_plunker_' + input_csv
 final_dataset.to_csv(final_table_name, index=False)
@@ -339,15 +339,15 @@ df = pd.read_csv(final_table_name)
 plunker_inputs = df.to_numpy()
 
 
-json_attrs = ['Title', 'ID', 'min-pval', 'init-pval',
-              'min-pval-children', 'interpolate', 'descendants']
+json_attrs = ['Title', 'ID', 'min_pval', 'init_pval',
+              'min_pval_children', 'interpolate', 'log_min_pval', 'descendants']
 
 ld = [{x: plunker_inputs[i,j] for (j, x) in enumerate(json_attrs)}
       for i in range(plunker_inputs.shape[0])]
 
 json_filename = 'plunker_inputs_' + input_csv.split('.')[0] + '.json'
 with open(json_filename, 'w') as file:
-    json.dump(ld, file)
+    simplejson.dump(ld, file, ignore_nan=True)
 
 new_cellLocation = new_html()
 new_html_name = 'new_cellLocation_' + input_csv.split('.')[0] + '.html'
