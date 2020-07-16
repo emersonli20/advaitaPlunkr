@@ -30,7 +30,7 @@ def has_class_but_no_id(tag):
     return tag.has_attr('title')
 
 def get_starting_nodes():
-    starting_node_titles = []
+    node_titles = []
     titles = soup.find_all("g", title=True)
     for title in titles:
         temp = str(title)
@@ -49,28 +49,25 @@ def get_starting_nodes():
         if name[-1] == 'a':
             name = name[:-1]
             name = name + 'on'
-        if name.lower() not in starting_node_titles:
-            starting_node_titles.append(name.lower())
+        if name.lower() not in node_titles:
+            node_titles.append(name.lower())
 #     print(starting_node_titles)
 
     graph = obonet.read_obo('go.obo')
     name_to_id = {data['name'].lower(): id_ for id_, data in graph.nodes(data=True) if 'name' in data}
-    starting_node_ids = []
-    for name in starting_node_titles:
+    node_ids = []
+    for name in node_titles:
         try:
-            starting_node_ids.append(name_to_id[name])
+            node_ids.append(name_to_id[name])
         except:
-            starting_node_ids.append(None)
+            node_ids.append(None)
 
-#     print(starting_node_ids)
+    node_titles_np = np.array(node_titles)[np.newaxis]
+    node_ids_np = np.array(node_ids)[np.newaxis]
 
-    starting_node_titles_np = np.array(starting_node_titles)[np.newaxis]
-    starting_node_ids_np = np.array(starting_node_ids)[np.newaxis]
+    nodes = np.concatenate((node_titles_np.T, node_ids_np.T),axis=1)
 
-    starting_nodes = np.concatenate((starting_node_titles_np.T, starting_node_ids_np.T),axis=1)
-#     print(starting_nodes)
-#     print(starting_nodes.shape)
-    return starting_nodes, starting_node_titles, starting_node_ids
+    return nodes, node_titles, node_ids
 
 def bfs(source):
     explored = []
@@ -324,8 +321,8 @@ final_pvals = np.concatenate([final_pvals[:,:-1],
 # final = np.concatenate((starting_nodes, final_pvals_np.T), axis=1)
 final = np.concatenate((starting_nodes, final_pvals), axis=1)
 
-for i, name in np.ndenumerate(final[:,0]):
-    final[i[0],0] = name.replace(' ', '_')
+for i, n in np.ndenumerate(final[:,0]):
+    final[i[0],0] = n.replace(' ', '_')
 final_dataset = pd.DataFrame({'Title': final[:,0], 'ID': final[:,1], 'min_pval': final[:,2], 
                               'init_pval': final[:,3], 'min_pval_children': final[:,4],
                               'interpolate': final[:,5], 'log_min_pval': final[:,6],
@@ -346,7 +343,7 @@ ld = [{x: plunker_inputs[i,j] for (j, x) in enumerate(json_attrs)}
       for i in range(plunker_inputs.shape[0])]
 
 json_filename = 'plunker_inputs_' + input_csv.split('.')[0] + '.json'
-with open(json_filename, 'w') as file:
+with open('Project/' + json_filename, 'w') as file:
     simplejson.dump(ld, file, ignore_nan=True)
 
 new_cellLocation = new_html()
