@@ -45,9 +45,9 @@ app.directive('cellLocation', function() {
                     id : d3.select(this).attr("id"),
                     class:  d3.select(this).attr("class"),
                     title : d3.select(this).attr("title"),
-                    pval_1: d3.select(this).attr("min_pval"),
-                    pval_2: d3.select(this).attr("init_pval"),
-                    pval_3: d3.select(this).attr("min_pval_descendants"),
+                    min_pval: d3.select(this).attr("min_pval"),
+                    init_pval: d3.select(this).attr("init_pval"),
+                    min_pval_descendants: d3.select(this).attr("min_pval_descendants"),
                     descendants: d3.select(this).attr("descendants")
                 };
                 scope.$apply(scope.updateSelection(cellComponent));
@@ -58,9 +58,9 @@ app.directive('cellLocation', function() {
                     id : d3.select(this).attr("id"),
                     class:  d3.select(this).attr("class"),
                     title : d3.select(this).attr("title"),
-                    pval_1 : d3.select(this).attr("min_pval"),
-                    pval_2: d3.select(this).attr("init_pval"),
-                    pval_3: d3.select(this).attr("min_pval_descendants"),
+                    min_pval: d3.select(this).attr("min_pval"),
+                    init_pval: d3.select(this).attr("init_pval"),
+                    min_pval_descendants: d3.select(this).attr("min_pval_descendants"),
                     descendants: d3.select(this).attr("descendants")
                 };
                 scope.$apply(scope.updateSelection(cellComponent));
@@ -81,13 +81,19 @@ app.directive('cellLocation', function() {
 
 app.controller('MainCtrl', function($scope, $http) {
   var cyMaScale = d3.interpolateLab('cyan', 'magenta');
-  $scope.values = ["melanoma", "breast_cancer"];
-  $scope.value = $scope.values[0];
+  $scope.values = ["melanoma", "melanoma_sig", "breast_cancer"];
+  $scope.value = $scope.values[1];
+  console.log($scope.value);
+  function change(){
   $(document).ready(function(){
   $http.get('plunker_inputs_' + $scope.value + '.json').success(function(data){
     var components = data;
     console.log(components);
-		$scope.colorMaps = {};
+    $scope.colorMaps = {};
+    $scope.min_pval = {};
+    $scope.init_pval = {};
+    $scope.min_pval_descendants = {};
+    $scope.descendants = {};
     var logs = [];
     for (var i=0; i < components.length; i++){
       console.log(components[i].Title);
@@ -103,8 +109,17 @@ app.controller('MainCtrl', function($scope, $http) {
       }
       console.log(compColor);
       $scope.colorMaps[components[i].Title + 'Color'] = compColor;
+      $scope.min_pval[components[i].Title + '_min_pval'] = components[i].min_pval;
+      $scope.init_pval[components[i].Title + '_init_pval'] = components[i].init_pval;
+      $scope.min_pval_descendants[components[i].Title + '_min_pval_descendants'] = components[i].min_pval_children;
+      $scope.descendants[components[i].Title + '_descendants'] = components[i].descendants;
     }
     $scope.maxLog = Math.max(...logs).toFixed(2);
+    console.log($scope.min_pval_descendants);
     });
-  });
+  })
+  };
+  $scope.change = change;
+  change();
+  
 });

@@ -14,7 +14,7 @@ import simplejson
 
 p = inflect.engine()
 
-input_csv = 'melanoma.csv'
+input_csv = 'breast_cancer_sig.csv'
 data = pd.read_csv(input_csv)
 data = data.to_numpy()
 
