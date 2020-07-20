@@ -310,8 +310,8 @@ def write_json(short=True):
     with open("Project/" + json_filename, 'w') as file:
         simplejson.dump(ld, file, ignore_nan=True)
 
-input_csv = 'melanoma_sig.csv'
-short = False
+input_csv = 'melanoma.csv'
+short = True
 data = pd.read_csv(input_csv)
 data = data.to_numpy()
 
