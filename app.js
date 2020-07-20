@@ -106,9 +106,9 @@ app.controller('MainCtrl', function($scope, $http) {
       }
       console.log(compColor);
       $scope.colorMaps[components[i].Title + 'Color'] = compColor;
-      $scope.min_pval[components[i].Title + '_min_pval'] = components[i].min_pval;
-      $scope.init_pval[components[i].Title + '_init_pval'] = components[i].init_pval;
-      $scope.min_pval_descendants[components[i].Title + '_min_pval_desceantsnd'] = components[i].min_pval_children;
+      $scope.min_pval[components[i].Title + '_min_pval'] = components[i].min_pval.toFixed(2);
+      $scope.init_pval[components[i].Title + '_init_pval'] = components[i].init_pval.toFixed(2);
+      $scope.min_pval_descendants[components[i].Title + '_min_pval_descendant'] = components[i].min_pval_children.toFixed(2);
       $scope.descendants[components[i].Title + '_descendants'] = components[i].descendants;
     }
     $scope.maxLog = Math.max(...logs).toFixed(2);
