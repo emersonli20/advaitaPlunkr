@@ -87,7 +87,11 @@ app.controller('MainCtrl', function($scope, $http) {
   $http.get('plunker_inputs_' + $scope.value + '.json').success(function(data){
     var components = data;
     console.log(components);
-		$scope.colorMaps = {};
+    $scope.colorMaps = {};
+    $scope.min_pval = {};
+    $scope.init_pval = {};
+    $scope.min_pval_descendants = {};
+    $scope.descendants = {};
     var logs = [];
     for (var i=0; i < components.length; i++){
       console.log(components[i].Title);
@@ -103,6 +107,10 @@ app.controller('MainCtrl', function($scope, $http) {
       }
       console.log(compColor);
       $scope.colorMaps[components[i].Title + 'Color'] = compColor;
+      $scope.min_pval[components[i].Title + '_min_pval'] = components[i].min_pval;
+      $scope.init_pval[components[i].Title + '_init_pval'] = components[i].init_pval;
+      $scope.min_pval_descendants[components[i].Title + '_min_pval_descendants'] = components[i].min_pval_descendants;
+      $scope.descendants[components[i].Title + '_descendants'] = components[i].descendants;
     }
     $scope.maxLog = Math.max(...logs).toFixed(2);
     });
